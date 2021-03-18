@@ -1,0 +1,308 @@
+﻿@{ ViewData["Title"] = "Home Page"; }
+
+<h1 class="display-4 text-center">Bem vindo API Teste Lucas Juan</h1>
+
+
+<div class="row py-2">
+    <div class="mx-auto">
+        <button class="btn btn-primary" onclick="modalCadastrar()"><i class="fa fa-plus"></i>Cadastrar</button>
+    </div>
+</div>
+
+
+
+<div class="container-fluid">
+    <div class="row" style="background-color:white">
+        <div class="col-sm-12 my-auto">
+            <div class="card shadow mb-4" style="padding:5px">
+                <div class="card-header py-3"> Gestão de Ítens Cadastrados</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <div class="table-responsive" style="overflow: auto">
+                            <table class="table table-bordered" id="datatable" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:20px">
+                                            Editar
+                                        </th>
+                                        <th style="min-width:20px">
+                                            Excluir
+                                        </th>
+                                        <th style="min-width:10px">
+                                            data inclusao
+                                        </th>
+                                        <th style="min-width:50px">
+                                            id
+                                        </th>
+                                        <th style="min-width:50px">
+                                            nome
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*Modal editar*@
+<div class="modal fade" id="editar" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @Html.Hidden("codigo")
+                <input type="text" class="form-control" name="nome" id="nome" />
+            </div>
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-primary" onclick="cadastrar()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="cadastrar" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Cadastrar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="partialAsync"></div>
+                @await Html.PartialAsync("_index")
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="cadastrar()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Script de configuração datatable*@
+<script>
+    //$(document).ready(function () {
+
+
+    //});
+
+    $(function () {
+        tabela = $('#datatable').dataTable({
+            "order": [],
+            columnDefs: [
+                {
+                    targets: 2,
+                    render: function (data) {
+                        return data ? moment(data).format('DD/MM/YYYY HH:MM') : "";
+                    },
+                    type: 'date-br'
+                },
+
+            ],
+            responsive: true
+        });
+        buscar();
+    });
+    function modalCadastrar() {
+        $("#PassWordRow").removeClass("d-none");
+        limparCampos();
+        $("#cadastrar").modal("show");
+    }
+
+    function cadastrar() {
+        let codigo = $("#Id").val();
+        codigo == "" ? codigo = 0 : codigo = $("#Id").val();
+        var data = JSON.stringify({ "Id": parseInt(codigo), "Nome": $("#Nome").val(), "Email": $("#Email").val(), "Senha": $("#Senha").val(), "Role": $("#Role").val() });
+        console.log(codigo);
+        if (validarCampos()) {
+        $.ajax({
+            url: '@Url.Action("Cadastrar", "Home")',
+            data: data,
+                type: 'POST',
+                "headers": {
+                    "Accept": "application/json",
+                "Content-Type": "application/json",
+                    'Authorization': "Bearer " + getCookie("barrier")
+                },
+                success: function (data) {
+                    console.log(data);
+                     if (data.result) {
+                         bootbox.alert({ title: 'Atenção', message: "Cadastrado com sucesso!" });
+                         $("#cadastrar").modal("hide");
+                         limparCampos();
+
+                         buscar();
+
+                     }
+                     else {
+                         bootbox.alert({ title: 'Atenção', message: data.message });
+                     }
+
+
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log(XMLHttpRequest.status);
+                if (XMLHttpRequest.status == 401) {
+                    bootbox.alert({ title: "<span class='bg-danger'>Atenção!</span>", message: "Erro:" + " " + XMLHttpRequest.status + " <br/>Não autorizado, por favor faça login para continuar" });
+                    SairDoSistema();
+                }
+            
+            }
+            });
+        }
+    }
+    function limparCampos() {
+        $("#Nome").val("");
+        $("#Id").val("");
+        $("#Email").val("");
+        $("#Senha").val("");
+        $("#Confirm").val("");
+        $('#Role').prop('selectedIndex', 0);
+    }
+    function buscar() {
+        console.log(document.cookie);
+        dadosTabela = [];
+        $.ajax({
+            url: '@Url.Action("BuscaResultados", "Home")',
+            type: 'GET',
+            success: function (data) {               
+                tabela.fnClearTable();
+                if (data.length > 0) {
+                    for (var i = 0; i < data.length; i++) {
+                        let data_inclusao = new Date(data[i].dataInclusao);
+                          //data_inclusao = $.datepicker.formatDate("yy/mm/dd", data_inclusao);
+                        dadosTabela.push([
+                             document.cookie !="" ? "<button class='btn btn-primary' onclick='editar(" + data[i].id + ")'> <i class='fa fa-edit'></i></button>" : "<button class='btn btn-secondary disabled'><i class='fa fa-edit'></i></button>",
+                            document.cookie !="" ? "<button class='btn btn-danger' onclick='excluir(" + data[i].id + ")'> <i class='fa fa-trash'></i></button>" : "<button class='btn btn-secondary disabled'><i class='fa fa-trash'></i></button>",
+                            data_inclusao,
+                            data[i].id,
+                            data[i].nome,
+                        ]);
+                   }
+                }
+                if (dadosTabela.length > 0) {
+                    tabela.dataTable().fnAddData(dadosTabela);
+                }
+            }
+            });
+    }
+    function excluir(id) {
+        bootbox.confirm({
+            title: "<b>Atenção!</b>",
+            message: "Deseja realmente prosseguir com a ação?",
+            buttons: {
+                confirm: {
+                    label: 'Sim',
+                    className: 'btn-success'
+                },
+                cancel: {
+                    label: 'Não',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+                if (result) {
+                    $.ajax({
+                        url: '@Url.Action("Excluir", "Home")',
+                            type: 'POST',
+                            "headers": {
+                                "Accept": "application/json",
+                                "Content-Type": "application/json",
+                                'Authorization': "Bearer " + getCookie("barrier")
+                            },
+                            data: JSON.stringify({ "Id": id }),
+                            success: function (data) {
+                                if (data) {
+                                    bootbox.alert({ title: 'Atenção', message: "Excluído com sucesso!" });
+                                    $("#texto").val("");
+                                    buscar();
+                                }
+                                else {
+
+                                }
+
+
+                        }
+                        });
+                }
+            }
+        });
+
+    }
+
+    function editar(id) {
+        $.ajax({
+            url: '@Url.Action("BuscaEditar", "Home")',
+            type: 'GET',
+            "headers": {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                'Authorization': "Bearer " + getCookie("barrier")
+            },
+            data: { "codigo": id },
+            success: function (data) {
+                console.log(data);
+                $("#cadastrar").modal('show');
+                $("#PassWordRow").addClass("d-none");
+                $("#Nome").val(data.nome);
+                $("#Email").val(data.email);
+                $("#Senha").val(data.senha);
+                $("#Confirm").val(data.senha);
+                $('#Role').val(data.role);
+                $('#Id').val(data.id);
+                //$("#partialAsync").html("");
+                //$("#partialAsync").append(data);
+                //if (data.result) {
+                //    $("#editar").modal("show");
+                //    $("#nome").val(data.data.nome);
+                //    $("#codigo").val(data.data.id);
+                //}
+
+            }
+            });
+    }
+
+
+    function validarCampos() {
+        if ($("#Nome").val() == "") {
+            bootbox.alert({ title: "<b>Atenção!</b>", message: "O Campo <b>Nome</b> é obrigatório" });
+            return false;
+        }
+        if ($("#Email").val() == "") {
+            bootbox.alert({ title: "<b>Atenção!</b>", message: "O Campo <b>E-mail</b> é obrigatório" });
+            return false;
+        }
+        if (!IsEmail($("#Email").val())) {
+            bootbox.alert({ title: "<b>Atenção!</b>", message: "<b>E-mail</b> Inválido" });
+            return false;
+        }
+        if ($("#Senha").val() == "") {
+            bootbox.alert({ title: "<b>Atenção!</b>", message: "O Campo <b>Senha</b> é obrigatório" });
+            return false;
+        }
+        if ($("#Confirm").val() == "") {
+            bootbox.alert({ title: "Atenção", message: "O campo  <b>Confirme a Senha</b> é obrigatório para continuar" });
+            return false;
+        }
+        if ($("#Senha").val() != $("#Confirm").val()) {
+            bootbox.alert({ title: "Atenção", message: "O campo <b> Senha e Senha confirmação </b> não são idênticos" });
+            return false;
+        }
+        if ($("#Role").val() == "") {
+            bootbox.alert({ title: "<b>Atenção!</b>", message: "Obrigatório o campo <b>Regra</b>!" });
+            return false;
+        }
+        return true;
+    }
+  
+</script>

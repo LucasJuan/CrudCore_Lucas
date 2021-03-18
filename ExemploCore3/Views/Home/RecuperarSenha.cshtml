@@ -1,0 +1,124 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<h4 class="display-4 text-center">Bem vindo Alteração de senha API Teste Lucas Juan</h4>
+<div class="row">
+    <div class="col-md-4 mx-auto">
+        <div class="card shadow">
+            <h5 class="card-header">Alteração de senha</h5>
+
+            <div class="card-body">
+<div class="row">
+                        <div class="col-sm-12">
+                            <input class="form-control" type="email" id="email" name="email" placeholder="E-mail de cadastro" />
+                        </div>
+                        <div class="col-sm-12">
+                            <input class="form-control" type="password" name="senha" id="senha" placeholder="Nova senha" />
+
+                        </div>
+                        <div class="col-sm-12">
+                            <input class="form-control" type="password" name="senha2" id="senha2" placeholder="Repita a senha" />
+                            @Html.Hidden("key")
+                        </div>
+                    </div>
+            </div>
+            <div class="card-footer">
+
+                <button class="btn btn-block btn-outline-info btn-sm" onclick="registraNovaSenha()"><i class="fa fa-check"></i>  Recuperar</button>
+                <div class="text-center spacetop" id="voltarLogin"><a href="@Url.Action("Index", "Home")">Voltar à páigna Home!</a></div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<script>
+    $(document).ready(function () {
+
+        verificaParametroURL();
+
+    });
+    function verificaParametroURL() {
+        var query = location.search.slice(1);
+        var partes = query.split('&');
+        var data = {};
+        var codigo = "";
+        partes.forEach(function (parte) {
+            var chaveValor = parte.split('=');
+            var chave = chaveValor[0];
+            var valor = chaveValor[1];
+            codigo = chaveValor[1];
+            data[chave] = valor;
+        });
+        if (query == "" || query == null) {
+            return query;
+        }
+        else
+            $("#key").val(codigo);
+        return codigo;
+    }
+    function registraNovaSenha() {
+
+        let = senha = $("#senha").val();
+        let = senha2 = $("#senha2").val();
+        let = email = $("#email").val();
+        if (email =="") {
+            bootbox.alert({ title: "Atenção!", message: "<b>É necessário digitar o E-mail</b>" });
+            return;
+        }
+        if (senha != senha2) {
+            bootbox.alert({ title: "Atenção!", message: "<b>Senhas não conferem</b>" });
+            return;
+        }
+          $.ajax({
+            type: 'POST',
+              url: '@Url.Action("RenewPWD", "Home")',
+              "headers": {
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+              },
+              data: JSON.stringify({ "Email": email, "Senha": senha, "Chave": $("#key").val() }),
+                success: function (data) {
+
+                    if (data.result) {
+                      
+                        $("#key").val("");
+                        $("#email").val("");
+                        $("#senha").val("");
+                        $("#senha2").val("");
+
+                        bootbox.alert({ title: "Atenção!", message: data.message });
+                        var url_atual = window.location.href;
+                        url = url_atual.split('?')[0];
+                        url_atual = url_atual.slice(0, url.indexOf('?'));
+                        // console.log(url_atual);
+                        window.history.pushState(null, null, "/ ");
+                        window.location()
+                    }
+                    else
+                        bootbox.alert({ title: "Atenção!", message: data.message });
+
+                    var url_atual = window.location.href;
+                    url = url_atual.split('?')[0];
+                    url_atual = url_atual.slice(0, url.indexOf('?'));
+
+              },
+              complete: function () {
+
+              },
+            error: function (xhr, ajaxOptions, thrownError, data) {
+                alert(xhr.status);
+                alert(thrownError);
+                console.log(data);
+            }
+
+        });
+
+
+    }
+
+
+</script>
