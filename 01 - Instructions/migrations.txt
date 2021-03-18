@@ -1,0 +1,4 @@
+Add-Migration InitialCreate
+Update-Database
+
+https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
