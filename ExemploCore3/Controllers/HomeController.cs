@@ -25,6 +25,7 @@ namespace WebApplication3.Controllers
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;
+          
         }
 
         [AllowAnonymous]
@@ -80,8 +81,9 @@ namespace WebApplication3.Controllers
                             return Json(new { result = false, message = "E-mail Já cadastrado no sistema" });
                         }
                     }
-                    
-                    var retorno = DAL.Home.set(form);
+                    var host = HttpContext.Request.Host.ToString();
+                    var scheme = HttpContext.Request.Scheme;
+                    var retorno = DAL.Home.set(form, host, scheme);
                     return Json(new { result = true, retorno = retorno });
                 }
                 else
@@ -142,7 +144,10 @@ namespace WebApplication3.Controllers
             }
             else
             {
-                DAL.Home.EmailConfirmacao(model.Email);
+                var https = HttpContext.Request.IsHttps;
+                var host = HttpContext.Request.Host.ToString();
+                var scheme = HttpContext.Request.Scheme;
+                DAL.Home.EmailConfirmacao(model.Email, host, scheme);
                 return Json(new { result = false, message = "Cadastro ainda não está ativo, por favor verifique em seu e-mail o Link para a ativação." });
             }
 
@@ -186,7 +191,10 @@ namespace WebApplication3.Controllers
         [HttpPost]
         public async Task<ActionResult> RecuperarEmail([FromBody] Acessa form)
         {
-            bool retorno = DAL.Home.ForgotPassword(form.Email);
+            var host = HttpContext.Request.Host.ToString();
+            var scheme = HttpContext.Request.Scheme;
+            
+            bool retorno = DAL.Home.ForgotPassword(form.Email, host, scheme);
             if (retorno)
             {
                 return Json(new { result = true, message = "As instruções para alteração de senha foram encaminhada em seu e-mail" });

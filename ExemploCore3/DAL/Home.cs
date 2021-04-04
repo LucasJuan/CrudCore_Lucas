@@ -1,4 +1,5 @@
 ﻿using ExemploCore3.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using MySql.Data.MySqlClient;
 using System;
@@ -14,8 +15,7 @@ namespace WebApplication3.DAL
 {
     public class Home
     {
-
-        public static bool set(Acessa form)
+        public static bool set(Acessa form, string host, string scheme)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace WebApplication3.DAL
 
                     db.Add(obj);
                     db.SaveChanges();
-                    EmailConfirmacao(obj.Email);
+                    EmailConfirmacao(obj.Email, host, scheme);
                     return true;
                 }
 
@@ -107,7 +107,7 @@ namespace WebApplication3.DAL
                 throw;
             }
         }
-        public static bool ForgotPassword(string email)
+        public static bool ForgotPassword(string email, string host, string scheme)
         {
             try
             {
@@ -129,7 +129,7 @@ namespace WebApplication3.DAL
                     html = html + "<h4>Prezado(a) " + obj.Nome + "</h4>";
                     html = html + "<p>Foi efetuada uma solicitação de <b>ALTERAÇÃO DE SENHA</b> em um de nossos sites. Para continuar clique no link abaixo</p>";
                     //html = html + "<a href='http://localhost:55303/Account/RecuperarSenha?key=" + usuario.chave_cadastro + "'>Clique aqui para redefinir a senha</a><br />";
-                    html = html + "<a href='https://localhost:44336/Home/RecuperarSenha?to=" + obj.Chave + "'>Clique aqui para continuar com a solicitação</a><br />";
+                    html = html + "<a href='"+scheme+"://"+host+"/Home/RecuperarSenha?to=" + obj.Chave + "'>Clique aqui para continuar com a solicitação</a><br />";
                     html = html + "<br /><br /><p><i>Se você recebeu este e-mail por engano, por favor desconsidere!</i></p>";
                     messageUsuario.Body = html;
                     messageUsuario.SubjectEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
@@ -152,7 +152,7 @@ namespace WebApplication3.DAL
 
 
         }
-        public static void EmailConfirmacao(string email)
+        public static void EmailConfirmacao(string email, string host, string scheme)
         {
             try
             {
@@ -174,7 +174,7 @@ namespace WebApplication3.DAL
                     html = html + "<h4>Prezado(a) " + obj.Nome + "</h4>";
                     html = html + "<p>Foi efetuada um <b>CADASTRO</b> com este e-mail em um de nossos sites. Para ativar o cadastro clique no link abaixo</p>";
                     //html = html + "<a href='http://localhost:55303/Account/RecuperarSenha?key=" + usuario.chave_cadastro + "'>Clique aqui para redefinir a senha</a><br />";
-                    html = html + "<a href='https://localhost:44336/Home/ConfirmaCredentials?to=" + obj.Chave + "'>Clique aqui para continuar com a solicitação</a><br />";
+                    html = html + "<a href='" + scheme + "://" + host + "/Home/ConfirmaCredentials?to=" + obj.Chave + "'>Clique aqui para continuar com a solicitação</a><br />";
                     html = html + "<br /><br /><p><i>Se você recebeu este e-mail por engano, por favor desconsidere!</i></p>";
                     messageUsuario.Body = html;
                     messageUsuario.SubjectEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
@@ -267,6 +267,7 @@ namespace WebApplication3.DAL
         {
             try
             {
+                
                 var db = new dbcrudContext();
                 var obj = db.Acessa.Where(c => c.Email == form.Email && c.Chave == form.Chave && c.DataExclusao == null && c.Ativo == "N").FirstOrDefault();
                 if (obj == null)
